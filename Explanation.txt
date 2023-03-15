@@ -1,0 +1,758 @@
+> # Required package 
+> library(MatchIt) 
+> # Work space preliminaries  
+> getwd()
+[1] "C:/Users/z3368347/OneDrive - UNSW/Documents"
+> setwd("C:/Users/z3368347/OneDrive - UNSW/Desktop/Customer Analytics/Week 5 Assignment 3")  
+> rm(list = ls())  
+> ds = read.csv("D5.2 Mashable.csv")
+> nrow(ds)
+[1] 38712
+> ncol(ds)
+[1] 9
+> #Note that shares is very skewed to the right.
+> summary(ds$shares)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      1     950    1400    3393    2800  843300 
+> # Task 1.a 
+> ds$treated = ifelse(ds$num_videos>0,1,0) # dichotomize treatment variable (yes/no treatment)
+> table(ds$treated)
+
+    0     1 
+25026 13686 
+> nrow(ds)
+[1] 38712
+> ncol(ds)
+[1] 10
+> # Task 1.b 
+> # The inclusion of at least one video associated with 1,418 additional shares 
+> # Given the average of shares (3,393), this is a 42% lift.  
+> summary(lm(shares ~ treated, data = ds))
+
+Call:
+lm(formula = shares ~ treated, data = ds)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4309  -2310  -1691   -491 838990 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  2891.47      73.58   39.30   <2e-16 ***
+treated      1418.71     123.76   11.46   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 11640 on 38710 degrees of freedom
+Multiple R-squared:  0.003383,	Adjusted R-squared:  0.003358 
+F-statistic: 131.4 on 1 and 38710 DF,  p-value: < 2.2e-16
+
+> # But if we control for other observed factors this drops to 1,242 additional shares. 
+> # Given the average of shares (3,393), this is a 37% lift.
+> summary(lm(shares ~ treated+category+weekday+num_imgs+num_keywords+
+                      +n_tokens_title+n_tokens_content+kwshares_avg, data = ds))  
+
+Call:
+lm(formula = shares ~ treated + category + weekday + num_imgs + 
+    num_keywords + n_tokens_title + n_tokens_content + kwshares_avg, 
+    data = ds)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-29822  -2322  -1366   -272 838201 
+
+Coefficients:
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)           -1.005e+03  4.378e+02  -2.296  0.02170 *  
+treated                1.242e+03  1.272e+02   9.763  < 2e-16 ***
+categoryentertainment -8.912e+02  2.146e+02  -4.153 3.29e-05 ***
+categorylifestyle     -7.925e+01  2.988e+02  -0.265  0.79085    
+categorysocialmedia    1.667e+02  2.829e+02   0.589  0.55570    
+categorytech          -1.135e+02  2.048e+02  -0.554  0.57942    
+categoryworld         -4.675e+00  1.814e+02  -0.026  0.97944    
+weekdaymonday          4.760e+02  2.117e+02   2.249  0.02453 *  
+weekdaysaturday        6.380e+02  2.832e+02   2.252  0.02430 *  
+weekdaysunday          3.064e+02  2.740e+02   1.118  0.26354    
+weekdaythursday       -1.002e+02  2.070e+02  -0.484  0.62854    
+weekdaytuesday        -7.159e+01  2.065e+02  -0.347  0.72878    
+weekdaywednesday       7.766e+01  2.062e+02   0.377  0.70638    
+num_imgs               3.732e+01  7.883e+00   4.734 2.20e-06 ***
+num_keywords           8.959e+01  3.215e+01   2.787  0.00532 ** 
+n_tokens_title         4.413e+01  2.836e+01   1.556  0.11966    
+n_tokens_content       8.042e-02  1.360e-01   0.591  0.55441    
+kwshares_avg           8.715e-01  4.787e-02  18.205  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 11570 on 38694 degrees of freedom
+Multiple R-squared:  0.01563,	Adjusted R-squared:  0.0152 
+F-statistic: 36.14 on 17 and 38694 DF,  p-value: < 2.2e-16
+
+> #Try taking log of shares (because shares is skewed right)
+> ds$lnshares = log(ds$shares)
+> summary(ds$lnshares)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  0.000   6.856   7.244   7.477   7.937  13.645 
+> nrow(ds)
+[1] 38712
+> ncol(ds)
+[1] 11
+> # The inclusion of at least one video is associated with 14.9% more shares. 
+> summary(lm(lnshares ~ treated, data = ds))
+
+Call:
+lm(formula = lnshares ~ treated, data = ds)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.5738 -0.6198 -0.1802  0.4654  6.0713 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 7.424424   0.005855 1268.04   <2e-16 ***
+treated     0.149341   0.009847   15.17   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.9262 on 38710 degrees of freedom
+Multiple R-squared:  0.005907,	Adjusted R-squared:  0.005881 
+F-statistic:   230 on 1 and 38710 DF,  p-value: < 2.2e-16
+
+> # Now when we control for other factors we get that including a video causes a 15.8% increase in shares.
+> summary(lm(lnshares ~ treated+category+weekday+num_imgs+num_keywords+
+                         +n_tokens_title+n_tokens_content+kwshares_avg, data = ds)) 
+
+Call:
+lm(formula = lnshares ~ treated + category + weekday + num_imgs + 
+    num_keywords + n_tokens_title + n_tokens_content + kwshares_avg, 
+    data = ds)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.9140 -0.5656 -0.1809  0.4085  6.0620 
+
+Coefficients:
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)            6.817e+00  3.352e-02 203.366  < 2e-16 ***
+treated                1.584e-01  9.738e-03  16.267  < 2e-16 ***
+categoryentertainment -2.251e-01  1.643e-02 -13.699  < 2e-16 ***
+categorylifestyle      4.149e-02  2.288e-02   1.813   0.0698 .  
+categorysocialmedia    2.848e-01  2.166e-02  13.149  < 2e-16 ***
+categorytech           1.413e-01  1.568e-02   9.010  < 2e-16 ***
+categoryworld         -8.416e-02  1.389e-02  -6.058 1.39e-09 ***
+weekdaymonday         -1.425e-02  1.621e-02  -0.879   0.3792    
+weekdaysaturday        2.262e-01  2.169e-02  10.432  < 2e-16 ***
+weekdaysunday          2.228e-01  2.098e-02  10.620  < 2e-16 ***
+weekdaythursday       -6.911e-02  1.585e-02  -4.360 1.30e-05 ***
+weekdaytuesday        -7.700e-02  1.581e-02  -4.871 1.11e-06 ***
+weekdaywednesday      -7.637e-02  1.578e-02  -4.839 1.31e-06 ***
+num_imgs               7.081e-03  6.035e-04  11.732  < 2e-16 ***
+num_keywords           1.891e-02  2.461e-03   7.685 1.57e-14 ***
+n_tokens_title        -6.622e-04  2.171e-03  -0.305   0.7604    
+n_tokens_content       2.498e-05  1.041e-05   2.398   0.0165 *  
+kwshares_avg           1.514e-04  3.665e-06  41.297  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.8859 on 38694 degrees of freedom
+Multiple R-squared:  0.09098,	Adjusted R-squared:  0.09058 
+F-statistic: 227.8 on 17 and 38694 DF,  p-value: < 2.2e-16
+
+> # Task 2.a 
+> # Now we use the matchit command to match each treated observation (with one or more videos)
+> # with a control observation with zero videos.
+> # This information gets stored in the object "matched". 
+> matched <- matchit(treated ~ category+weekday+num_imgs+num_keywords+
++                     +n_tokens_title+n_tokens_content+kwshares_avg, data = ds)
+> # Note that "matched" is not a dataset with rows and columns -- it is an "object". We create the dataset from it later. 
+> nrow(matched)
+NULL
+> ncol(matched)
+NULL
+> # Task 2.b: all variables associated with satisfactory balancing (std mean diff < 0.1)
+> summary(matched)
+
+Call:
+matchit(formula = treated ~ category + weekday + num_imgs + num_keywords + 
+    +n_tokens_title + n_tokens_content + kwshares_avg, data = ds)
+
+Summary of Balance for All Data:
+                      Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean eCDF Max
+distance                     0.3963        0.3301          0.5362     1.1479    0.1543   0.2172
+categorybusiness             0.0997        0.1955         -0.3196          .    0.0958   0.0958
+categoryentertainment        0.2172        0.1259          0.2214          .    0.0913   0.0913
+categorylifestyle            0.0342        0.0652         -0.1705          .    0.0310   0.0310
+categorysocialmedia          0.0498        0.0656         -0.0729          .    0.0159   0.0159
+categorytech                 0.1513        0.2108         -0.1659          .    0.0595   0.0595
+categoryworld                0.4478        0.3370          0.2228          .    0.1108   0.1108
+weekdayfriday                0.1467        0.1423          0.0125          .    0.0044   0.0044
+weekdaymonday                0.1690        0.1664          0.0070          .    0.0026   0.0026
+weekdaysaturday              0.0529        0.0670         -0.0630          .    0.0141   0.0141
+weekdaysunday                0.0623        0.0716         -0.0382          .    0.0092   0.0092
+weekdaythursday              0.1830        0.1846         -0.0040          .    0.0015   0.0015
+weekdaytuesday               0.1960        0.1815          0.0367          .    0.0146   0.0146
+weekdaywednesday             0.1900        0.1867          0.0083          .    0.0032   0.0032
+num_imgs                     4.2001        4.6842         -0.0575     1.0746    0.0065   0.2494
+num_keywords                 7.2953        7.1874          0.0585     0.9000    0.0112   0.0326
+n_tokens_title              10.6858       10.2103          0.2260     1.0063    0.0238   0.1003
+n_tokens_content           526.8712      554.9833         -0.0560     1.2462    0.0179   0.0899
+kwshares_avg              3259.5081     2969.1281          0.1998     1.5578    0.0703   0.1213
+
+Summary of Balance for Matched Data:
+                      Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean eCDF Max Std. Pair Dist.
+distance                     0.3963        0.3866          0.0785     1.1946    0.0149   0.0705          0.0785
+categorybusiness             0.0997        0.0983          0.0046          .    0.0014   0.0014          0.3831
+categoryentertainment        0.2172        0.2079          0.0225          .    0.0093   0.0093          0.6250
+categorylifestyle            0.0342        0.0349         -0.0036          .    0.0007   0.0007          0.3325
+categorysocialmedia          0.0498        0.0522         -0.0114          .    0.0025   0.0025          0.4140
+categorytech                 0.1513        0.1517         -0.0010          .    0.0004   0.0004          0.5475
+categoryworld                0.4478        0.4549         -0.0144          .    0.0072   0.0072          0.7229
+weekdayfriday                0.1467        0.1488         -0.0060          .    0.0021   0.0021          0.6965
+weekdaymonday                0.1690        0.1684          0.0016          .    0.0006   0.0006          0.7467
+weekdaysaturday              0.0529        0.0516          0.0059          .    0.0013   0.0013          0.4387
+weekdaysunday                0.0623        0.0637         -0.0057          .    0.0014   0.0014          0.4772
+weekdaythursday              0.1830        0.1842         -0.0030          .    0.0012   0.0012          0.7770
+weekdaytuesday               0.1960        0.1939          0.0053          .    0.0021   0.0021          0.7971
+weekdaywednesday             0.1900        0.1893          0.0017          .    0.0007   0.0007          0.7903
+num_imgs                     4.2001        4.4945         -0.0350     1.3076    0.0077   0.2416          0.7230
+num_keywords                 7.2953        7.2902          0.0028     0.9209    0.0079   0.0159          1.1514
+n_tokens_title              10.6858       10.5902          0.0454     1.0033    0.0052   0.0258          0.9957
+n_tokens_content           526.8712      541.7628         -0.0297     1.2863    0.0175   0.0818          0.8869
+kwshares_avg              3259.5081     3145.4277          0.0785     1.1318    0.0340   0.0695          0.7470
+
+Sample Sizes:
+          Control Treated
+All         25026   13686
+Matched     13686   13686
+Unmatched   11340       0
+Discarded       0       0
+
+> #Notice that 13686 treated observations are matched with control observations. 11340 additional control obs are not needed. 
+> plot(summary(matched, standardize = TRUE))
+> # Task 2.c: strong overlap in [0.1,0.7]  
+> plot(matched,  type = "jitter", interactive = FALSE)  
+> # Task 3.a 
+> # The command match.data creates a dataset from the "matched" object that we created earlier.
+> # We call this new dataset called "ds_matched". 
+> # In this new datset, each treated observation (one or more videos) is matched with a control observation
+> # with zero videos. The propensity score is a variable in the new dataset. 
+> ds_matched = match.data(matched, distance = "pscore")
+> nrow(ds_matched)
+[1] 27372
+> ncol(ds_matched)
+[1] 14
+> head(ds_matched)
+   shares      category weekday num_videos num_imgs num_keywords n_tokens_title n_tokens_content kwshares_avg
+1     593 entertainment  monday          0        1            5             12              219            0
+4    1200 entertainment  monday          0        1            7              9              531            0
+10    710         world  monday          1        1            5             10              231            0
+14  10000         world  monday         21        0            6              9              285            0
+15    761         world  monday          0        9            7              8              259            0
+17  13600         world  monday          1       12            5              8             1118            0
+   treated lnshares    pscore weights subclass
+1        0 6.385194 0.3727665       1     1697
+4        0 7.090077 0.3338562       1     2511
+10       1 6.565265 0.2693225       1        1
+14       1 9.210340 0.2644963       1     1258
+15       0 6.634633 0.2207827       1    13011
+17       1 9.517825 0.2026452       1     2309
+> table(ds_matched$treated)
+
+    0     1 
+13686 13686 
+> # Using propensity score matching we get an ATE = 1,306.
+> # This compares to a correlation estimate of 1418, and an estimate of 1242 when we control for observed differences in the posts.
+> #   
+> summary(lm(shares ~ treated, data = ds_matched))
+
+Call:
+lm(formula = shares ~ treated, data = ds_matched)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4309  -2810  -2004   -704 838990 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   3003.6      113.7  26.410  < 2e-16 ***
+treated       1306.6      160.8   8.124 4.72e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 13300 on 27370 degrees of freedom
+Multiple R-squared:  0.002405,	Adjusted R-squared:  0.002369 
+F-statistic: 65.99 on 1 and 27370 DF,  p-value: 4.718e-16
+
+> # But if we convert to log of shares propensity score matching gives an ATE of 16.8%. 
+> # This compares to a correlational estimate of 14.9%, and an estimate of 15.8% when we control for observed differences in the posts.
+> summary(lm(lnshares ~ treated, data = ds_matched))
+
+Call:
+lm(formula = lnshares ~ treated, data = ds_matched)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.5738 -0.6660 -0.2361  0.4654  6.0713 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 7.406230   0.008202  902.99   <2e-16 ***
+treated     0.167535   0.011599   14.44   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.9595 on 27370 degrees of freedom
+Multiple R-squared:  0.007564,	Adjusted R-squared:  0.007528 
+F-statistic: 208.6 on 1 and 27370 DF,  p-value: < 2.2e-16
+
+
+
+
+> # Task 3.c: First estimate the effect of including the first video (exactly 1 video vs. no video).
+> # To do this we create a new dataset that drops observations with 2 or more videos. 
+> # That means we specify data = ds[ds$num_videos<=1,]
+> summary(lm(shares ~ treated, data = ds[ds$num_videos<=1,]))
+
+Call:
+lm(formula = shares ~ treated, data = ds[ds$num_videos <= 1,])
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4153  -2167  -1691   -391 839091 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  2891.47      66.53   43.46   <2e-16 ***
+treated      1317.92     129.56   10.17   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 10520 on 33986 degrees of freedom
+Multiple R-squared:  0.003035,	Adjusted R-squared:  0.003006 
+F-statistic: 103.5 on 1 and 33986 DF,  p-value: < 2.2e-16
+
+> summary(lm(shares ~ treated+category+weekday+num_imgs+num_keywords+
++              n_tokens_title+n_tokens_content+kwshares_avg, data = ds[ds$num_videos<=1,]))
+
+Call:
+lm(formula = shares ~ treated + category + weekday + num_imgs + 
+    num_keywords + n_tokens_title + n_tokens_content + kwshares_avg, 
+    data = ds[ds$num_videos <= 1, ])
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-29297  -2128  -1264   -227 838250 
+
+Coefficients:
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)           -914.54092  420.34360  -2.176   0.0296 *  
+treated               1136.20376  131.77738   8.622  < 2e-16 ***
+categoryentertainment -449.65744  208.29895  -2.159   0.0309 *  
+categorylifestyle      180.48648  279.48908   0.646   0.5184    
+categorysocialmedia    677.79593  273.60823   2.477   0.0132 *  
+categorytech           172.60110  191.52741   0.901   0.3675    
+categoryworld          322.58017  171.95803   1.876   0.0607 .  
+weekdaymonday          253.18453  204.05864   1.241   0.2147    
+weekdaysaturday        736.68436  272.18362   2.707   0.0068 ** 
+weekdaysunday          320.17919  263.96744   1.213   0.2252    
+weekdaythursday       -119.30912  199.68476  -0.597   0.5502    
+weekdaytuesday         -70.28403  199.60480  -0.352   0.7248    
+weekdaywednesday        86.51676  198.80749   0.435   0.6634    
+num_imgs                36.87470    7.56424   4.875 1.09e-06 ***
+num_keywords            78.12532   31.05344   2.516   0.0119 *  
+n_tokens_title          21.39898   27.35800   0.782   0.4341    
+n_tokens_content         0.15006    0.13618   1.102   0.2705    
+kwshares_avg             0.85194    0.04672  18.234  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 10450 on 33970 degrees of freedom
+Multiple R-squared:  0.01755,	Adjusted R-squared:  0.01706 
+F-statistic:  35.7 on 17 and 33970 DF,  p-value: < 2.2e-16
+
+> matched01 <- matchit(treated ~ category+weekday+num_imgs+num_keywords+
+                        +n_tokens_title+n_tokens_content+kwshares_avg, data = ds[ds$num_videos<=1,])  
+> summary(matched01)
+
+Call:
+matchit(formula = treated ~ category + weekday + num_imgs + num_keywords + 
+    +n_tokens_title + n_tokens_content + kwshares_avg, data = ds[ds$num_videos <=1,])
+
+Summary of Balance for All Data:
+                      Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean eCDF Max
+distance                     0.2999        0.2507          0.4852     1.2430    0.1409   0.1984
+categorybusiness             0.1077        0.1955         -0.2834          .    0.0878   0.0878
+categoryentertainment        0.1891        0.1259          0.1613          .    0.0632   0.0632
+categorylifestyle            0.0372        0.0652         -0.1481          .    0.0280   0.0280
+categorysocialmedia          0.0370        0.0656         -0.1512          .    0.0286   0.0286
+categorytech                 0.1781        0.2108         -0.0855          .    0.0327   0.0327
+categoryworld                0.4509        0.3370          0.2290          .    0.1139   0.1139
+weekdayfriday                0.1462        0.1423          0.0110          .    0.0039   0.0039
+weekdaymonday                0.1718        0.1664          0.0144          .    0.0054   0.0054
+weekdaysaturday              0.0507        0.0670         -0.0746          .    0.0164   0.0164
+weekdaysunday                0.0600        0.0716         -0.0486          .    0.0115   0.0115
+weekdaythursday              0.1838        0.1846         -0.0020          .    0.0008   0.0008
+weekdaytuesday               0.1946        0.1815          0.0332          .    0.0131   0.0131
+weekdaywednesday             0.1929        0.1867          0.0157          .    0.0062   0.0062
+num_imgs                     4.7542        4.6842          0.0079     1.1993    0.0057   0.2143
+num_keywords                 7.3086        7.1874          0.0668     0.8720    0.0138   0.0417
+n_tokens_title              10.6869       10.2103          0.2293     0.9822    0.0251   0.1004
+n_tokens_content           470.3825      554.9833         -0.1837     1.0500    0.0370   0.1318
+kwshares_avg              3213.8938     2969.1281          0.1624     1.6763    0.0504   0.1011
+
+Summary of Balance for Matched Data:
+                      Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean eCDF Max Std. Pair Dist.
+distance                     0.2999        0.2978          0.0212     1.0752    0.0016   0.0269          0.0213
+categorybusiness             0.1077        0.1104         -0.0086          .    0.0027   0.0027          0.4334
+categoryentertainment        0.1891        0.1947         -0.0142          .    0.0056   0.0056          0.6952
+categorylifestyle            0.0372        0.0375         -0.0018          .    0.0003   0.0003          0.3475
+categorysocialmedia          0.0370        0.0412         -0.0219          .    0.0041   0.0041          0.3586
+categorytech                 0.1781        0.1734          0.0122          .    0.0047   0.0047          0.6364
+categoryworld                0.4509        0.4429          0.0161          .    0.0080   0.0080          0.7867
+weekdayfriday                0.1462        0.1541         -0.0224          .    0.0079   0.0079          0.7110
+weekdaymonday                0.1718        0.1713          0.0015          .    0.0006   0.0006          0.7593
+weekdaysaturday              0.0507        0.0534         -0.0127          .    0.0028   0.0028          0.4340
+weekdaysunday                0.0600        0.0594          0.0028          .    0.0007   0.0007          0.4716
+weekdaythursday              0.1838        0.1784          0.0138          .    0.0054   0.0054          0.7560
+weekdaytuesday               0.1946        0.1948         -0.0006          .    0.0002   0.0002          0.8005
+weekdaywednesday             0.1929        0.1886          0.0110          .    0.0044   0.0044          0.7813
+num_imgs                     4.7542        5.0219         -0.0301     1.1392    0.0057   0.1971          0.7671
+num_keywords                 7.3086        7.3272         -0.0102     0.8997    0.0098   0.0233          1.1499
+n_tokens_title              10.6869       10.7321         -0.0217     0.9364    0.0031   0.0116          0.9890
+n_tokens_content           470.3825      487.7819         -0.0378     1.3770    0.0198   0.0938          0.7851
+kwshares_avg              3213.8938     3192.6170          0.0141     1.0157    0.0144   0.0358          0.7151
+
+Sample Sizes:
+          Control Treated
+All         25026    8962
+Matched      8962    8962
+Unmatched   16064       0
+Discarded       0       0
+
+> plot(summary(matched01, standardize = TRUE))  
+> ds_matched01 = match.data(matched01, distance = "pscore") 
+> summary(lm(shares ~ num_videos, data = ds_matched01))  # ATE comparing 0 vs 1 video is 1,091 
+
+Call:
+lm(formula = shares ~ num_videos, data = ds_matched01)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4153  -2709  -2018   -718 839091 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   3117.6      140.3  22.221  < 2e-16 ***
+num_videos    1091.8      198.4   5.503 3.79e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 13280 on 17922 degrees of freedom
+Multiple R-squared:  0.001687,	Adjusted R-squared:  0.001631 
+F-statistic: 30.28 on 1 and 17922 DF,  p-value: 3.793e-08
+
+> ds$treated = ifelse(ds$num_videos>=2,1,0)  
+> summary(lm(shares ~ treated, data = ds[ds$num_videos>0,]))
+
+Call:
+lm(formula = shares ~ treated, data = ds[ds$num_videos > 0, ])
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4500  -3311  -2809  -1109 839091 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   4209.4      184.6  22.801   <2e-16 ***
+treated        292.0      314.2   0.929    0.353    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 17480 on 13684 degrees of freedom
+Multiple R-squared:  6.31e-05,	Adjusted R-squared:  -9.972e-06 
+F-statistic: 0.8635 on 1 and 13684 DF,  p-value: 0.3528
+
+> summary(lm(shares ~ treated+category+weekday+num_imgs+num_keywords+
+                       +n_tokens_title+n_tokens_content+kwshares_avg, data = ds[ds$num_videos>0,]))
+
+Call:
+lm(formula = shares ~ treated + category + weekday + num_imgs + 
+    num_keywords + n_tokens_title + n_tokens_content + kwshares_avg, 
+    data = ds[ds$num_videos > 0, ])
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-31242  -3286  -2166   -683 837747 
+
+Coefficients:
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)           -6.115e+02  1.177e+03  -0.519  0.60351    
+treated                4.021e+02  3.269e+02   1.230  0.21878    
+categoryentertainment -2.473e+03  5.796e+02  -4.267    2e-05 ***
+categorylifestyle     -1.720e+03  9.434e+02  -1.823  0.06832 .  
+categorysocialmedia   -1.888e+03  8.244e+02  -2.290  0.02205 *  
+categorytech          -1.232e+03  6.187e+02  -1.991  0.04647 *  
+categoryworld         -1.214e+03  5.283e+02  -2.298  0.02158 *  
+weekdaymonday          9.766e+02  5.316e+02   1.837  0.06622 .  
+weekdaysaturday        8.993e+02  7.564e+02   1.189  0.23450    
+weekdaysunday          2.730e+02  7.135e+02   0.383  0.70198    
+weekdaythursday        5.424e+01  5.219e+02   0.104  0.91724    
+weekdaytuesday         8.872e+01  5.141e+02   0.173  0.86299    
+weekdaywednesday       7.784e+02  5.176e+02   1.504  0.13264    
+num_imgs               3.682e+01  1.970e+01   1.869  0.06163 .  
+num_keywords           9.031e+01  8.299e+01   1.088  0.27652    
+n_tokens_title         1.939e+02  7.221e+01   2.685  0.00725 ** 
+n_tokens_content      -6.118e-02  3.349e-01  -0.183  0.85505    
+kwshares_avg           9.034e-01  1.064e-01   8.491  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 17410 on 13668 degrees of freedom
+Multiple R-squared:  0.009018,	Adjusted R-squared:  0.007786 
+F-statistic: 7.317 on 17 and 13668 DF,  p-value: < 2.2e-16
+
+> matched12plus <- matchit(treated ~ category+weekday+num_imgs+num_keywords+
++                        +n_tokens_title+n_tokens_content+kwshares_avg, data = ds[ds$num_videos>0,])  
+> summary(matched12plus)
+
+Call:
+matchit(formula = treated ~ category + weekday + num_imgs + num_keywords + 
+    +n_tokens_title + n_tokens_content + kwshares_avg, data = ds[ds$num_videos>0, ])
+
+Summary of Balance for All Data:
+                      Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean eCDF Max
+distance                     0.4038        0.3142          0.6115     1.3576    0.1890   0.2914
+categorybusiness             0.0847        0.1077         -0.0826          .    0.0230   0.0230
+categoryentertainment        0.2705        0.1891          0.1832          .    0.0814   0.0814
+categorylifestyle            0.0286        0.0372         -0.0515          .    0.0086   0.0086
+categorysocialmedia          0.0739        0.0370          0.1408          .    0.0368   0.0368
+categorytech                 0.1006        0.1781         -0.2578          .    0.0775   0.0775
+categoryworld                0.4418        0.4509         -0.0184          .    0.0091   0.0091
+weekdayfriday                0.1478        0.1462          0.0045          .    0.0016   0.0016
+weekdaymonday                0.1636        0.1718         -0.0222          .    0.0082   0.0082
+weekdaysaturday              0.0572        0.0507          0.0280          .    0.0065   0.0065
+weekdaysunday                0.0667        0.0600          0.0267          .    0.0066   0.0066
+weekdaythursday              0.1816        0.1838         -0.0056          .    0.0022   0.0022
+weekdaytuesday               0.1988        0.1946          0.0105          .    0.0042   0.0042
+weekdaywednesday             0.1844        0.1929         -0.0220          .    0.0085   0.0085
+num_imgs                     3.1490        4.7542         -0.2193     0.6775    0.0208   0.1016
+num_keywords                 7.2701        7.3086         -0.0203     1.0927    0.0083   0.0263
+n_tokens_title              10.6837       10.6869         -0.0015     1.0712    0.0033   0.0101
+n_tokens_content           634.0370      470.3825          0.2943     1.4589    0.0771   0.1521
+kwshares_avg              3346.0439     3213.8938          0.0986     0.7904    0.0524   0.0989
+
+Summary of Balance for Matched Data:
+                      Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean eCDF Max Std. Pair Dist.
+distance                     0.4038        0.3822          0.1480     1.3508    0.0257   0.0986          0.1481
+categorybusiness             0.0847        0.0798          0.0175          .    0.0049   0.0049          0.5178
+categoryentertainment        0.2705        0.2909         -0.0457          .    0.0203   0.0203          0.8148
+categorylifestyle            0.0286        0.0246          0.0241          .    0.0040   0.0040          0.3062
+categorysocialmedia          0.0739        0.0686          0.0202          .    0.0053   0.0053          0.4702
+categorytech                 0.1006        0.0950          0.0183          .    0.0055   0.0055          0.4660
+categoryworld                0.4418        0.4412          0.0013          .    0.0006   0.0006          0.8572
+weekdayfriday                0.1478        0.1505         -0.0078          .    0.0028   0.0028          0.7152
+weekdaymonday                0.1636        0.1636          0.0000          .    0.0000   0.0000          0.2705
+weekdaysaturday              0.0572        0.0567          0.0018          .    0.0004   0.0004          0.4614
+weekdaysunday                0.0667        0.0650          0.0068          .    0.0017   0.0017          0.4837
+weekdaythursday              0.1816        0.1820         -0.0011          .    0.0004   0.0004          0.7972
+weekdaytuesday               0.1988        0.1937          0.0127          .    0.0051   0.0051          0.7957
+weekdaywednesday             0.1844        0.1884         -0.0104          .    0.0040   0.0040          0.7833
+num_imgs                     3.1490        3.3772         -0.0312     1.1703    0.0063   0.1056          0.5757
+num_keywords                 7.2701        7.3292         -0.0311     1.0565    0.0076   0.0237          1.1176
+n_tokens_title              10.6837       10.7005         -0.0078     1.0386    0.0023   0.0108          1.0988
+n_tokens_content           634.0370      564.7712          0.1245     1.0592    0.0329   0.0766          0.7055
+kwshares_avg              3346.0439     3262.5815          0.0623     0.5919    0.0544   0.1035          0.9962
+
+Sample Sizes:
+          Control Treated
+All          8962    4724
+Matched      4724    4724
+Unmatched    4238       0
+Discarded       0       0
+
+> plot(summary(matched12plus, standardize = TRUE))  
+> ds_matched12plus = match.data(matched12plus, distance = "pscore") 
+> summary(lm(shares ~ treated, data = ds_matched12plus))  
+
+Call:
+lm(formula = shares ~ treated, data = ds_matched12plus)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+ -4500  -3269  -2701  -1099 685899 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)   3999.3      231.0  17.310   <2e-16 ***
+treated        502.1      326.7   1.537    0.124    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 15880 on 9446 degrees of freedom
+Multiple R-squared:  0.0002499,	Adjusted R-squared:  0.000144 
+F-statistic: 2.361 on 1 and 9446 DF,  p-value: 0.1244
+
+
+
+> # Now let's try this using the log of shares:
+> # Estimate effect of 0 vs 1 video using log shares:
+> ds$treated = ifelse(ds$num_videos>0,1,0)
+> summary(lm(lnshares ~ treated, data = ds[ds$num_videos<=1,]))
+
+Call:
+lm(formula = lnshares ~ treated, data = ds[ds$num_videos <= 1,])
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-6.0381 -0.6110 -0.1802  0.4446  6.0833 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 7.424424   0.005772 1286.20   <2e-16 ***
+treated     0.137320   0.011241   12.22   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.9132 on 33986 degrees of freedom
+Multiple R-squared:  0.004372,	Adjusted R-squared:  0.004342 
+F-statistic: 149.2 on 1 and 33986 DF,  p-value: < 2.2e-16
+
+> summary(lm(lnshares ~ treated+category+weekday+num_imgs+num_keywords+
+                        +n_tokens_title+n_tokens_content+kwshares_avg, data = ds[ds$num_videos<=1,]))
+
+Call:
+lm(formula = lnshares ~ treated + category + weekday + num_imgs + 
+    num_keywords + n_tokens_title + n_tokens_content + kwshares_avg, 
+    data = ds[ds$num_videos <= 1, ])
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-6.1329 -0.5496 -0.1700  0.4025  6.0886 
+
+Coefficients:
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)            6.825e+00  3.497e-02 195.138  < 2e-16 ***
+treated                1.452e-01  1.096e-02  13.241  < 2e-16 ***
+categoryentertainment -2.064e-01  1.733e-02 -11.909  < 2e-16 ***
+categorylifestyle      4.965e-02  2.326e-02   2.135   0.0328 *  
+categorysocialmedia    3.348e-01  2.277e-02  14.708  < 2e-16 ***
+categorytech           1.449e-01  1.594e-02   9.093  < 2e-16 ***
+categoryworld         -8.452e-02  1.431e-02  -5.907 3.51e-09 ***
+weekdaymonday         -9.613e-03  1.698e-02  -0.566   0.5713    
+weekdaysaturday        2.262e-01  2.265e-02   9.987  < 2e-16 ***
+weekdaysunday          2.238e-01  2.196e-02  10.191  < 2e-16 ***
+weekdaythursday       -7.579e-02  1.661e-02  -4.562 5.09e-06 ***
+weekdaytuesday        -7.780e-02  1.661e-02  -4.685 2.82e-06 ***
+weekdaywednesday      -7.789e-02  1.654e-02  -4.708 2.51e-06 ***
+num_imgs               6.868e-03  6.294e-04  10.911  < 2e-16 ***
+num_keywords           1.940e-02  2.584e-03   7.510 6.07e-14 ***
+n_tokens_title        -3.876e-03  2.276e-03  -1.703   0.0886 .  
+n_tokens_content       1.696e-05  1.133e-05   1.497   0.1345    
+kwshares_avg           1.582e-04  3.888e-06  40.702  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.8695 on 33970 degrees of freedom
+Multiple R-squared:  0.09765,	Adjusted R-squared:  0.0972 
+F-statistic: 216.3 on 17 and 33970 DF,  p-value: < 2.2e-16
+
+> summary(lm(lnshares ~ num_videos, data = ds_matched01))  
+
+Call:
+lm(formula = lnshares ~ num_videos, data = ds_matched01)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-5.8199 -0.6540 -0.2485  0.4717  6.0833 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  7.42934    0.01013 733.685   <2e-16 ***
+num_videos   0.13241    0.01432   9.246   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.9586 on 17922 degrees of freedom
+Multiple R-squared:  0.004747,	Adjusted R-squared:  0.004692 
+F-statistic: 85.49 on 1 and 17922 DF,  p-value: < 2.2e-16
+
+> # Estimate effect of 1 vs 2+ videos using log shares:
+> ds$treated = ifelse(ds$num_videos>=2,1,0)  
+> summary(lm(lnshares ~ treated, data = ds[ds$num_videos>0,]))
+
+Call:
+lm(formula = lnshares ~ treated, data = ds[ds$num_videos > 0, ])
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.5966 -0.6888 -0.2485  0.5051  6.0833 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  7.56174    0.01056 715.864   <2e-16 ***
+treated      0.03483    0.01798   1.937   0.0528 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 1 on 13684 degrees of freedom
+Multiple R-squared:  0.0002741,	Adjusted R-squared:  0.0002011 
+F-statistic: 3.752 on 1 and 13684 DF,  p-value: 0.05276
+
+> summary(lm(lnshares ~ treated+category+weekday+num_imgs+num_keywords+
+                         +n_tokens_title+n_tokens_content+kwshares_avg, data = ds[ds$num_videos>0,]))
+
+Call:
+lm(formula = lnshares ~ treated + category + weekday + num_imgs + 
+    num_keywords + n_tokens_title + n_tokens_content + kwshares_avg, 
+    data = ds[ds$num_videos > 0, ])
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.9040 -0.6418 -0.2425  0.4488  6.0311 
+
+Coefficients:
+                        Estimate Std. Error t value Pr(>|t|)    
+(Intercept)            7.013e+00  6.567e-02 106.798  < 2e-16 ***
+treated                5.640e-02  1.824e-02   3.093 0.001988 ** 
+categoryentertainment -2.926e-01  3.233e-02  -9.052  < 2e-16 ***
+categorylifestyle     -4.985e-02  5.262e-02  -0.947 0.343472    
+categorysocialmedia    6.368e-02  4.598e-02   1.385 0.166091    
+categorytech           1.177e-01  3.451e-02   3.412 0.000648 ***
+categoryworld         -1.261e-01  2.947e-02  -4.279 1.89e-05 ***
+weekdaymonday         -1.557e-02  2.965e-02  -0.525 0.599497    
+weekdaysaturday        2.259e-01  4.219e-02   5.354 8.74e-08 ***
+weekdaysunday          2.476e-01  3.980e-02   6.222 5.04e-10 ***
+weekdaythursday       -5.192e-02  2.911e-02  -1.783 0.074536 .  
+weekdaytuesday        -6.131e-02  2.868e-02  -2.138 0.032530 *  
+weekdaywednesday      -3.482e-02  2.887e-02  -1.206 0.227774    
+num_imgs               6.783e-03  1.099e-03   6.173 6.89e-10 ***
+num_keywords           9.414e-03  4.629e-03   2.034 0.042008 *  
+n_tokens_title         1.428e-02  4.028e-03   3.546 0.000392 ***
+n_tokens_content      -4.757e-06  1.868e-05  -0.255 0.799021    
+kwshares_avg           1.221e-04  5.935e-06  20.575  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.971 on 13668 degrees of freedom
+Multiple R-squared:  0.05843,	Adjusted R-squared:  0.05726 
+F-statistic: 49.89 on 17 and 13668 DF,  p-value: < 2.2e-16
+
+> summary(lm(lnshares ~ treated, data = ds_matched12plus))
+
+Call:
+lm(formula = lnshares ~ treated, data = ds_matched12plus)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.5966 -0.6920 -0.2834  0.5006  5.8669 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  7.53857    0.01463 515.283  < 2e-16 ***
+treated      0.05800    0.02069   2.803  0.00507 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 1.006 on 9446 degrees of freedom
+Multiple R-squared:  0.0008313,	Adjusted R-squared:  0.0007255 
+F-statistic: 7.859 on 1 and 9446 DF,  p-value: 0.005068
